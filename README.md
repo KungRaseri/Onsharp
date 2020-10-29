@@ -7,7 +7,7 @@ Onsharp is now released! Please keep in mind: Onsharp is in the absolute alpha a
 ## Documentation
 We take great care to provide good documentation so that the introduction, but also the work with Onsharp is as easy as possible for everyone. We are not perfect, but we try our best. Here you can find our documentation: https://onsharp.gitbook.io/docs/
 
-> The docuemntation is sill WIP!
+> The documentation is still a work in progress!
 
 ## The Team
 | <a href="https://github.com/DasDarki" target="_blank">**DasDarki**</a> |
