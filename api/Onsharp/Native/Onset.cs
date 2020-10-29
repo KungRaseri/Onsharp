@@ -16,7 +16,7 @@ namespace Onsharp.Native
 
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void SetPropertyValue([MarshalAs(UnmanagedType.LPStr)] string entityName, int entity,
-            [MarshalAs(UnmanagedType.LPStr)] string propertyName, IntPtr propertyValue);
+            [MarshalAs(UnmanagedType.LPStr)] string propertyName, IntPtr propertyValue, bool sync);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetPlayerRagdoll(int player, bool enable);
@@ -91,7 +91,7 @@ namespace Onsharp.Native
         internal static extern int GetPlayerEquippedWeaponSlot(int player);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int GetPlayerWeapon(int player, int slot);
+        internal static extern void GetPlayerWeapon(int player, int slot, ref int model, ref int ammo);
 
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetPlayerWeapon(int player, int weapon, int ammo, bool equip, int slot, bool loaded);
@@ -149,12 +149,6 @@ namespace Onsharp.Native
         internal static extern void SetPlayerSpawnLocation(int player, double x, double y, double z, double heading);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void GetColorValuesFromHex([MarshalAs(UnmanagedType.LPStr)] string hex, ref int red, ref int green, ref int blue, ref int alpha);
-        
-        [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr GetColorHex(int red, int green, int blue, int alpha, bool withAlpha);
-        
-        [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void EnableVehicleBackfire(int vehicle, bool enable);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
@@ -197,7 +191,7 @@ namespace Onsharp.Native
         internal static extern void SetVehicleLinearVelocity(int vehicle, double x, double y, double z);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SetVehicleColor(int vehicle, [MarshalAs(UnmanagedType.LPStr)] string hexColor);
+        internal static extern void SetVehicleColor(int vehicle, [MarshalAs(UnmanagedType.LPStr)] string hexColor);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr GetVehicleColor(int vehicle);
@@ -509,6 +503,9 @@ namespace Onsharp.Native
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void RegisterCommand([MarshalAs(UnmanagedType.LPStr)] string pluginId, [MarshalAs(UnmanagedType.LPStr)] string commandName);
+        
+        [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void RegisterCommandAlias([MarshalAs(UnmanagedType.LPStr)] string pluginId, [MarshalAs(UnmanagedType.LPStr)] string commandName, [MarshalAs(UnmanagedType.LPStr)] string alias);
         
         [DllImport(Bridge.DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void CallRemote(int player, [MarshalAs(UnmanagedType.LPStr)] string name, IntPtr[] nVals, int len);

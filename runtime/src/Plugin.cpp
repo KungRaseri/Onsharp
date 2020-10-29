@@ -81,11 +81,9 @@ Plugin::Plugin()
         Lua::ParseArguments(L, key, args_table);
         int len = args_table->Count();
         void** args = new void*[len];
-        int idx = 0;
-        args_table->ForEach([args, &idx](Lua::LuaValue k, Lua::LuaValue v) {
+        args_table->ForEach([args](Lua::LuaValue k, Lua::LuaValue v) {
             (void) k;
-            args[idx] = Plugin::Get()->CreateNValueByLua(std::move(v));
-            idx++;
+            args[k.GetValue<int>()-1] = Plugin::Get()->CreateNValueByLua(std::move(v));
         });
         Plugin::Get()->ClearLuaStack();
         NValue* returnVal = Plugin::Get()->CallBridge(key.c_str(), args, len);
@@ -116,11 +114,9 @@ Plugin::Plugin()
         void** args = new void*[len + 2];
         args[0] = Plugin::Get()->CreatNValueByString(pluginId);
         args[1] = Plugin::Get()->CreatNValueByString(funcName);
-        int idx = 2;
-        args_table->ForEach([args, &idx](Lua::LuaValue k, Lua::LuaValue v) {
+        args_table->ForEach([args](Lua::LuaValue k, Lua::LuaValue v) {
             (void) k;
-            args[idx] = Plugin::Get()->CreateNValueByLua(std::move(v));
-            idx++;
+            args[k.GetValue<int>()+1] = Plugin::Get()->CreateNValueByLua(std::move(v));
         });
         Plugin::Get()->ClearLuaStack();
         NValue* returnVal = Plugin::Get()->CallBridge("interop", args, len);
@@ -139,11 +135,12 @@ EXPORTED Plugin::NValue* GetPropertyValue(const char* entityName, int entity, co
     return Plugin::Get()->CreateNValueByLua(returnValues.at(0));
 }
 
-EXPORTED void SetPropertyValue(const char* entityName, int entity, const char* propertyKey, Plugin::NValue* propertyValue)
+EXPORTED void SetPropertyValue(const char* entityName, int entity, const char* propertyKey, Plugin::NValue* propertyValue, bool sync)
 {
     std::string funcName = "Set" + std::string(entityName) + "PropertyValue";
     Lua::LuaArgs_t args = Lua::BuildArgumentList(entity, propertyKey);
     propertyValue->AddAsArg(&args);
+    args.emplace_back(sync);
     Plugin::Get()->CallLuaFunction(funcName.c_str(), &args);
 }
 
@@ -154,11 +151,11 @@ EXPORTED bool SetPlayerRagdoll(int player, bool enable)
     return returnValues.at(0).GetValue<bool>();
 }
 
-EXPORTED long GetPlayerSteamId(int player)
+EXPORTED long long GetPlayerSteamId(int player)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(player);
     Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("GetPlayerSteamId", &args);
-    return returnValues.at(0).GetValue<long>();
+    return returnValues.at(0).GetValue<long long>();
 }
 
 EXPORTED float GetPlayerHeadSize(int player)
@@ -227,14 +224,14 @@ EXPORTED Plugin::NValue* GetPlayerIP(int player)
     return Plugin::Get()->CreateNValueByLua(returnValues.at(0));
 }
 
-EXPORTED long GetPlayerRespawnTime(int player)
+EXPORTED long long GetPlayerRespawnTime(int player)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(player);
     Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("GetPlayerRespawnTime", &args);
-    return returnValues.at(0).GetValue<long>();
+    return returnValues.at(0).GetValue<long long>();
 }
 
-EXPORTED void SetPlayerRespawnTime(int player, long msTime)
+EXPORTED void SetPlayerRespawnTime(int player, long long msTime)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(player, msTime);
     Plugin::Get()->CallLuaFunction("SetPlayerRespawnTime", &args);
@@ -306,11 +303,12 @@ EXPORTED int GetPlayerEquippedWeaponSlot(int player)
     return returnValues.at(0).GetValue<int>();
 }
 
-EXPORTED int GetPlayerWeapon(int player, int slot)
+EXPORTED void GetPlayerWeapon(int player, int slot, int* model, int* ammo)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(player, slot);
     Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("GetPlayerWeapon", &args);
-    return returnValues.at(0).GetValue<int>();
+    *model = returnValues.at(0).GetValue<int>();
+    *ammo = returnValues.at(1).GetValue<int>();
 }
 
 EXPORTED bool SetPlayerWeapon(int player, int weapon, int ammo, bool equip, int slot, bool loaded)
@@ -537,11 +535,10 @@ EXPORTED Plugin::NValue* GetVehicleColor(int vehicle)
     return Plugin::Get()->CreateNValueByLua(returnValues.at(0));
 }
 
-EXPORTED bool SetVehicleColor(int vehicle, const char* hexColor)
+EXPORTED void SetVehicleColor(int vehicle, const char* hexColor)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(vehicle, hexColor);
-    Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("SetVehicleColor", &args);
-    return returnValues.at(0).GetValue<bool>();
+    Plugin::Get()->CallLuaFunction("SetVehicleColor", &args);
 }
 
 EXPORTED int GetVehicleNumberOfSeats(int vehicle)
@@ -619,35 +616,11 @@ EXPORTED void SetVehicleRotation(int vehicle, double x, double y, double z)
     Plugin::Get()->CallLuaFunction("SetVehicleRotation", &args);
 }
 
-EXPORTED bool SetVehicleRespawnParams(int vehicle, bool enableRespawn, long respawnTime, bool repairOnRespawn)
+EXPORTED bool SetVehicleRespawnParams(int vehicle, bool enableRespawn, long long respawnTime, bool repairOnRespawn)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(vehicle, enableRespawn, respawnTime, repairOnRespawn);
     Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("SetVehicleRespawnParams", &args);
     return returnValues.at(0).GetValue<bool>();
-}
-
-EXPORTED void GetColorValuesFromHex(const char* hex, int* red, int* green, int* blue, int* alpha)
-{
-    Lua::LuaArgs_t args = Lua::BuildArgumentList(hex);
-    Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("HexToRGBA", &args);
-    *red = returnValues.at(0).GetValue<int>();
-    *green = returnValues.at(1).GetValue<int>();
-    *blue = returnValues.at(2).GetValue<int>();
-    *alpha = returnValues.at(3).GetValue<int>();
-}
-
-EXPORTED Plugin::NValue* GetColorHex(int red, int green, int blue, int alpha, bool withAlpha)
-{
-    if(withAlpha)
-    {
-        Lua::LuaArgs_t args = Lua::BuildArgumentList(red, green, blue, alpha);
-        Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("RGBA", &args);
-        return Plugin::Get()->CreateNValueByLua(returnValues.at(0));
-    }
-
-    Lua::LuaArgs_t args = Lua::BuildArgumentList(red, green, blue);
-    Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("RGB", &args);
-    return Plugin::Get()->CreateNValueByLua(returnValues.at(0));
 }
 
 EXPORTED Plugin::NValue* GetVehicleModelName(int vehicle)
@@ -1032,7 +1005,7 @@ EXPORTED int CreateTimer(const char* id, double interval)
     return returnValues.at(0).GetValue<int>();
 }
 
-EXPORTED void Delay(const char* id, long millis)
+EXPORTED void Delay(const char* id, long long millis)
 {
     Lua::LuaArgs_t argValues = Lua::BuildArgumentList(id, millis);
     Lua::LuaArgs_t returnValues = Plugin::Get()->CallLuaFunction("Onsharp_Delay", &argValues);
@@ -1257,6 +1230,12 @@ EXPORTED void RegisterCommand(const char* pluginId, const char* commandName)
 {
     Lua::LuaArgs_t args = Lua::BuildArgumentList(pluginId, commandName);
     Plugin::Get()->CallLuaFunction("Onsharp_RegisterCommand", &args);
+}
+
+EXPORTED void RegisterCommandAlias(const char* pluginId, const char* commandName, const char* alias)
+{
+    Lua::LuaArgs_t args = Lua::BuildArgumentList(pluginId, commandName, alias);
+    Plugin::Get()->CallLuaFunction("Onsharp_RegisterCommandAlias", &args);
 }
 
 EXPORTED Plugin::NValue* CreateNValue_s(const char* val)

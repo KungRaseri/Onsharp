@@ -2,7 +2,7 @@
 Onsharp is a C# Wrapper for the [Onset Game](https://playonset.com/). It allows you to use C# as your scripting language for the server-side.
 
 ## RELEASED
-Onsharp is not released! Please keep in mind: Onsharp is in the absolute alpha and the most parts of the API are not tested. Please report any bug as soon as possible! If you have question, please look in our documentation first and than ask them here. 
+Onsharp is now released! Please keep in mind: Onsharp is in the absolute alpha and the most parts of the API are not tested. Please report any bug as soon as possible! If you have question, please look in our documentations first and than ask them here. 
 
 ## Documentation
 We take great care to provide good documentation so that the introduction, but also the work with Onsharp is as easy as possible for everyone. We are not perfect, but we try our best. Here you can find our documentation: https://onsharp.gitbook.io/docs/
