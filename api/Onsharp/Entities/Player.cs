@@ -4,6 +4,7 @@ using System.Text;
 using Onsharp.Enums;
 using Onsharp.Events;
 using Onsharp.Native;
+using Onsharp.Steam;
 using Onsharp.Utils;
 using Onsharp.World;
 
@@ -35,6 +36,21 @@ namespace Onsharp.Entities
         /// </summary>
         public long SteamID => Onset.GetPlayerSteamId(Id);
 
+        /// <summary>
+        /// The steam id of the player as string and in the 64 format.
+        /// </summary>
+        public string SteamID64 => SteamID.ToString();
+
+        /// <summary>
+        /// The steam id of the player in the 32 format.
+        /// </summary>
+        public string SteamID32 => SteamIDConvert.Steam64ToSteam32(SteamID);
+
+        /// <summary>
+        /// The steam id of the player in the second format.
+        /// </summary>
+        public string SteamID2 => SteamIDConvert.Steam64ToSteam2(SteamID);
+        
         /// <summary>
         /// Whether the voice is enabled and the player can talk in voice chat, or not.
         /// </summary>
@@ -204,9 +220,68 @@ namespace Onsharp.Entities
                 }
             }
         }
+        
+        /// <summary>
+        /// Whether this player is admin or not. If set to true, the player has administrator permission which means he can run all commands on the server.
+        /// </summary>
+        public bool IsAdmin { get; set; }
+
+        /// <summary>
+        /// The permissions the player has. Permissions can be wildcarded.
+        /// </summary>
+        private readonly List<string> _permissions;
 
         public Player(int id) : base(id, "Player")
         {
+            _permissions = new List<string>();
+        }
+
+        /// <summary>
+        /// Adds the given permission to the player.
+        /// </summary>
+        /// <param name="permission">The permission to be added</param>
+        public void AddPermission(string permission)
+        {
+            lock (_permissions)
+            {
+                _permissions.Add(permission);
+            }
+        }
+        
+        /// <summary>
+        /// Removes the given permission from the player.
+        /// </summary>
+        /// <param name="permission">The permission to be removed</param>
+        public void RemovePermission(string permission)
+        {
+            lock (_permissions)
+            {
+                _permissions.Remove(permission);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the player has the given permission or not.
+        /// </summary>
+        /// <param name="permission">The permission to be checked</param>
+        /// <returns>True if the player has the permission</returns>
+        public bool HasPermission(string permission)
+        {
+            if (IsAdmin) return true;
+            lock (_permissions)
+            {
+                if (_permissions.Contains("*")) return true;
+                if (_permissions.Contains(permission)) return true;
+                string[] parts = permission.Split('.');
+                string lastPart = "";
+                foreach (string part in parts)
+                {
+                    lastPart += part + ".";
+                    if (_permissions.Contains(lastPart + "*")) return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -233,7 +308,13 @@ namespace Onsharp.Entities
             IntPtr[] argsArr = new IntPtr[args.Length];
             for (int i = 0; i < args.Length; i++)
             {
-                argsArr[i] = Bridge.CreateNValue(args[i]).NativePtr;
+                object arg = args[i];
+                if (arg is Entity entity)
+                {
+                    arg = entity.Id;
+                }
+                
+                argsArr[i] = Bridge.CreateNValue(arg).NativePtr;
             }
             
             Onset.CallRemote(Id, name, argsArr, argsArr.Length);
@@ -432,13 +513,47 @@ namespace Onsharp.Entities
         /// Gets the currently equipped weapon on the given slot of the player.
         /// </summary>
         /// <param name="slot">The wanted slot</param>
+        /// <param name="ammo">The ammo currently in the weapon</param>
+        /// <returns>The equipped weapon</returns>
+        /// <exception cref="ArgumentException">When the slot is out of range (between 1 and 3)</exception>
+        public Weapon GetCurrentWeapon(int slot, out int ammo)
+        {
+            if(slot < 1 || slot > 3)
+                throw new ArgumentException("The slot cannot be less than 1 and greater than 3!");
+            int model = 0, rAmmo = 0;
+            Onset.GetPlayerWeapon(Id, slot, ref model, ref rAmmo);
+            ammo = rAmmo;
+            return (Weapon) model;
+        }
+
+        /// <summary>
+        /// Gets the ammo of the currently equipped weapon on the given slot of the player.
+        /// </summary>
+        /// <param name="slot">The wanted slot</param>
+        /// <returns>The ammo of the equipped weapon</returns>
+        /// <exception cref="ArgumentException">When the slot is out of range (between 1 and 3)</exception>
+        public int GetCurrentAmmo(int slot)
+        {
+            if(slot < 1 || slot > 3)
+                throw new ArgumentException("The slot cannot be less than 1 and greater than 3!");
+            int model = 0, rAmmo = 0;
+            Onset.GetPlayerWeapon(Id, slot, ref model, ref rAmmo);
+            return rAmmo;
+        }
+
+        /// <summary>
+        /// Gets the currently equipped weapon on the given slot of the player.
+        /// </summary>
+        /// <param name="slot">The wanted slot</param>
         /// <returns>The equipped weapon</returns>
         /// <exception cref="ArgumentException">When the slot is out of range (between 1 and 3)</exception>
         public Weapon GetCurrentWeapon(int slot)
         {
             if(slot < 1 || slot > 3)
                 throw new ArgumentException("The slot cannot be less than 1 and greater than 3!");
-            return (Weapon) Onset.GetPlayerWeapon(Id, slot);
+            int model = 0, rAmmo = 0;
+            Onset.GetPlayerWeapon(Id, slot, ref model, ref rAmmo);
+            return (Weapon) model;
         }
 
         /// <summary>
@@ -527,10 +642,11 @@ namespace Onsharp.Entities
         /// Sends a colored message to the player's chat.
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void SendColoredMessage(string message)
+        /// <param name="size">The size of the font</param>
+        public void SendColoredMessage(string message, int size = 10)
         {
             StringBuilder formattedMessage = new StringBuilder();
-            string currentPart = "<span size=\"10\">";
+            string currentPart = "<span size=\"" + size + "\">";
             for(int i = 0; i < message.Length; i++)
             {
                 char c = message[i];
@@ -548,7 +664,7 @@ namespace Onsharp.Entities
                         i++;
                     }
 
-                    currentPart = "<span size=\"10\" " + (color != null ? "color=\"#" + color + "\"" : "") +
+                    currentPart = "<span size=\"" + size + "\" " + (color != null ? "color=\"#" + color + "\"" : "") +
                                   (style != null ? " style=\"" + style + "\"" : "") + ">";
                 }
                 else
@@ -610,6 +726,7 @@ namespace Onsharp.Entities
                 case 'e':
                     return "FFFF55";
                 case 'f':
+                case 'r':
                     return "FFFFFF";
                 default:
                     return null;

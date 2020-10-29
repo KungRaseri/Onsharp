@@ -1,4 +1,5 @@
-﻿using Onsharp.World;
+﻿using Onsharp.Entities;
+using Onsharp.World;
 
 namespace Onsharp.Events
 {
@@ -54,7 +55,7 @@ namespace Onsharp.Events
         NPCReachTarget = 10,
         /// <summary>
         /// Called when a <see cref="Onsharp.Entities.NPC"/> is damaged.<br/>
-        /// (<see cref="Onsharp.Entities.NPC"/> npc, <see cref="Onsharp.Enums.DamageType"/> damageType, <see cref="float"/> amount)
+        /// (<see cref="Onsharp.Entities.NPC"/> npc, <see cref="Onsharp.Enums.DamageType"/> damageType, <see cref="double"/> amount)
         /// </summary>
         NPCDamage = 11,
         /// <summary>
@@ -152,7 +153,7 @@ namespace Onsharp.Events
         PlayerWeaponShot = 29,
         /// <summary>
         /// Called when a <see cref="Onsharp.Entities.Player"/> is damaged.<br/>
-        /// (<see cref="Onsharp.Entities.Player"/> player, <see cref="Onsharp.Enums.DamageType"/> damageType, <see cref="float"/> amount)
+        /// (<see cref="Onsharp.Entities.Player"/> player, <see cref="Onsharp.Enums.DamageType"/> damageType, <see cref="double"/> amount)
         /// </summary>
         PlayerDamage = 30,
         /// <summary>
@@ -166,5 +167,106 @@ namespace Onsharp.Events
         /// /// <returns>Returning false results in preventing the further processing</returns>
         /// </summary>
         PlayerPreCommand = 32,
+        /// <summary>
+        /// Called when a vehicle takes health or physical damage.<br/>
+        /// (<see cref="Onsharp.Entities.Vehicle"/> vehicle, <see cref="double"/> healthDamage, <see cref="int"/>damageIndex, <see cref="double"/> physicalDamage)
+        /// </summary>
+        VehicleDamage = 33,
+        /// <summary>
+        /// Called when a user enters text in the console and hits enter.
+        /// (<see cref="string"/>)
+        /// </summary>
+        ConsoleInput = 34,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Door"/> has been destroyed.
+        /// (<see cref="Onsharp.Entities.Door"/>)
+        /// </summary>
+        DoorDestroyed = 35,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.NPC"/> has been destroyed.
+        /// (<see cref="Onsharp.Entities.NPC"/>)
+        /// </summary>
+        NPCDestroyed = 36,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Object"/> has been destroyed.
+        /// (<see cref="Onsharp.Entities.Object"/>)
+        /// </summary>
+        ObjectDestroyed = 37,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Pickup"/> has been destroyed.
+        /// (<see cref="Onsharp.Entities.Pickup"/>)
+        /// </summary>
+        PickupDestroyed = 38,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Text3D"/> has been destroyed.
+        /// (<see cref="Onsharp.Entities.Text3D"/>)
+        /// </summary>
+        Text3DDestroyed = 39,
+        //----- NEW EVENTS ----\\
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Player"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.Player"/> player, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        PlayerChangeDimension = 40,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Vehicle"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.Vehicle"/> vehicle, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        VehicleChangeDimension = 41,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Text3D"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.Text3D"/> tex3D, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        Text3DChangeDimension = 42,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Pickup"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.Pickup"/> pickup, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        PickupChangeDimension = 43,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Object"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.Object"/> obj, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        ObjectChangeDimension = 44,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.NPC"/> changed the dimension.
+        /// (<see cref="Onsharp.Entities.NPC"/> npc, <see cref="Onsharp.World.Dimension"/> old, <see cref="Onsharp.World.Dimension"/> new)
+        /// </summary>
+        NPCChangeDimension = 45,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Object"/> got created.
+        /// (<see cref="Onsharp.Entities.Object"/>)
+        /// </summary>
+        ObjectCreated = 46,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Vehicle"/> got created.
+        /// (<see cref="Onsharp.Entities.Vehicle"/>)
+        /// </summary>
+        VehicleCreated = 47,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Text3D"/> got created.
+        /// (<see cref="Onsharp.Entities.Text3D"/>)
+        /// </summary>
+        Text3DCreated = 48,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Pickup"/> got created.
+        /// (<see cref="Onsharp.Entities.Pickup"/>)
+        /// </summary>
+        PickupCreated = 49,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.NPC"/> got created.
+        /// (<see cref="Onsharp.Entities.NPC"/>)
+        /// </summary>
+        NPCCreated = 50,
+        /// <summary>
+        /// Called when a <see cref="Onsharp.Entities.Door"/> got created.
+        /// (<see cref="Onsharp.Entities.Door"/>)
+        /// </summary>
+        DoorCreated = 51,
+        /// <summary>
+        /// Called when an <see cref="Onsharp.Entities.Object"/> stopped moving after <see cref="Object.MoveTo"/>.
+        /// (<see cref="Onsharp.Entities.Object"/>)
+        /// </summary>
+        ObjectStopMoving = 52
     }
 }

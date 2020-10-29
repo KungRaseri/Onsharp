@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using Onsharp.Commands;
@@ -16,6 +17,19 @@ namespace Onsharp
 {
     internal class Server : IServer
     {
+        #region Entity Types
+
+        private static readonly Type EntityType = typeof(Entity);
+        private static readonly Type PlayerType = typeof(Player);
+        private static readonly Type DoorType = typeof(Door);
+        private static readonly Type NPCType = typeof(NPC);
+        private static readonly Type ObjectType = typeof(Object);
+        private static readonly Type PickupType = typeof(Pickup);
+        private static readonly Type Text3DType = typeof(Text3D);
+        private static readonly Type VehicleType = typeof(Vehicle);
+
+        #endregion
+        
         internal PluginDomain Owner { get; }
 
         public string Name
@@ -84,11 +98,13 @@ namespace Onsharp
 
         private readonly CommandManager _commandManager;
         private readonly Dimension _globalDim;
+        private readonly ConcurrentQueue<Action> _taskQueue;
 
         internal Server(PluginDomain owner)
         {
             Owner = owner;
             _globalDim = new Dimension(this, 0);
+            _taskQueue = new ConcurrentQueue<Action>();
             Dimensions = new List<Dimension>();
             PlayerFactory = new PlayerFactory();
             PlayerPool = new EntityPool(this, null, CreatePlayer);
@@ -287,14 +303,19 @@ namespace Onsharp
             return flag;
         }
 
+        internal void Inject()
+        {
+            _commandManager.RegisterCommands(Bridge.Runtime, "native");
+        }
+
         public void RegisterCommands(object owner)
         {
-            _commandManager.RegisterCommands(owner);
+            _commandManager.RegisterCommands(owner, Owner.Plugin.Meta.Id);
         }
 
         public void RegisterCommands<T>()
         {
-            _commandManager.RegisterCommands<T>();
+            _commandManager.RegisterCommands<T>(Owner.Plugin.Meta.Id);
         }
 
         public LuaPackage ImportPackage(string packageName)
@@ -373,6 +394,11 @@ namespace Onsharp
             return _globalDim.CreateVehicle(model, pos, heading);
         }
 
+        public void InvokeMainThread(Action callback)
+        {                
+            _taskQueue.Enqueue(callback);
+        }
+
         internal object FireExportable(string funcName, object[] args)
         {
             lock (Exportables)
@@ -390,6 +416,46 @@ namespace Onsharp
             }
         }
 
+        private Entity CreateTypedEntity(int id, Type type)
+        {
+            if (type == DoorType)
+            {
+                return CreateDoor(id);
+            }
+            
+            if (type == NPCType)
+            {
+                return CreateNPC(id);
+            }
+            
+            if (type == ObjectType)
+            {
+                return CreateObject(id);
+            }
+            
+            if (type == PickupType)
+            {
+                return CreatePickup(id);
+            }
+            
+            if (type == PlayerType)
+            {
+                return CreatePlayer(id);
+            }
+            
+            if (type == Text3DType)
+            {
+                return CreateText3D(id);
+            }
+            
+            if (type == VehicleType)
+            {
+                return CreateVehicle(id);
+            }
+            
+            return type == NPCType ? CreateNPC(id) : null;
+        }
+
         internal void FireRemoteEvent(string name, int player, object[] nArgs)
         {
             lock (RemoteEvents)
@@ -399,11 +465,19 @@ namespace Onsharp
                     RemoteEvent @event = RemoteEvents[i];
                     if (@event.Name == name)
                     {
+                        ParameterInfo[] parameters = @event.Parameters;
                         object[] args = new object[nArgs.Length + 1];
                         args[0] = CreatePlayer(player);
                         for (int j = 0; j < nArgs.Length; j++)
                         {
-                            args[j + 1] = nArgs[j];
+                            ParameterInfo parameter = parameters[j + 1];
+                            object raw = nArgs[j];
+                            if (EntityType.IsAssignableFrom(parameter.ParameterType) && raw is int id)
+                            {
+                                raw = CreateTypedEntity(id, parameter.ParameterType);
+                            }
+                            
+                            args[j + 1] = raw;
                         }
 
                         @event.FireEvent(args);
@@ -430,6 +504,14 @@ namespace Onsharp
                         if (!@event.FireEvent(eventArgs))
                             flag = false;
                     }
+                }
+            }
+
+            if (type == EventType.GameTick)
+            {
+                while (_taskQueue.TryDequeue(out Action callback))
+                {
+                    callback.Invoke();
                 }
             }
 
